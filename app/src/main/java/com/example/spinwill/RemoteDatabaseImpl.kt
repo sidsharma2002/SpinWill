@@ -2,11 +2,10 @@ package com.example.spinwill
 
 import android.util.Log
 import com.example.spinwill.database.remote.SpinWillRemoteDatabase
-import com.example.spinwill.models.SpinWillItem
 import com.example.spinwill.utils.Resource
 import kotlinx.coroutines.delay
 
-class RemoteDatabaseImpl : SpinWillRemoteDatabase {
+class RemoteDatabaseImpl : SpinWillRemoteDatabase<SpinWillItem> {
     override suspend fun fetch(): Resource<List<SpinWillItem>> {
         Log.d("App", "23")
         val list = mutableListOf<SpinWillItem>()
@@ -20,7 +19,7 @@ class RemoteDatabaseImpl : SpinWillRemoteDatabase {
             )
         )
 
-        delay(2000)
+        delay(1000L)
 
         list.add(
             SpinWillItem(
