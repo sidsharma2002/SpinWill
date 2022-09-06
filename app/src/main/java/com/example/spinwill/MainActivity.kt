@@ -30,7 +30,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        AppWillRoomDatabase.getInstance(this.applicationContext)
         setupDependencies()
         // setupWork()
         setupUi()
@@ -40,10 +39,10 @@ class MainActivity : AppCompatActivity() {
         // set context, remoteDb, localDb, dao, bitmap load use-case.
         injector.init(this, RemoteDatabaseImpl())
 
-        val daoConc = SpinWillDaoConc()
-        daoConc.setDao(AppWillRoomDatabase.getInstance(this.applicationContext).getSpinWillDao())
+        val daoActions = SpinWillDaoConc()
+        daoActions.setDao(AppWillRoomDatabase.getInstance(this.applicationContext).getSpinWillDao())
         injector.setLocalDatabase(
-            SpinWillLocalDbImpl(daoConc)
+            SpinWillLocalDbImpl(daoActions)
         )
 
         injector.setBitmapLoadUseCase(
