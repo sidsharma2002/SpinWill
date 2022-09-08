@@ -7,16 +7,45 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.example.spinwill.R
+import com.example.spinwill.models.WillDimenProperties
+import com.example.spinwill.models.WillGradient
+import com.example.spinwill.models.WillPaintProperties
+import com.example.spinwill.ui.DimenAdapters.OffSetDimenAdapter1
+import com.example.spinwill.ui.adapters.WillItemUiAdapter
+import com.example.spinwill.ui.defaultImpl.OverlayDimenAdapter1Impl
+import com.example.spinwill.ui.defaultImpl.TextDimenAdapter1Impl
 import com.example.spinwill.utils.dp
+import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.sin
 
-class WillView1 constructor(
+/**
+ * * note : this cannot be inflated directly from xml.
+ */
+class WillView1<T> constructor(
     context: Context,
     attributeSet: AttributeSet?
 ) : View(context, attributeSet) {
 
-    companion object {
-        const val DEFAULT_PADDING = 5
+    private var wheelSize: Int = 0
+
+    /**
+     * list for the will-data items
+     */
+    private lateinit var items: List<T>
+
+    fun setItems(items: List<T>) {
+        this.items = items
+        wheelSize = items.size
+    }
+
+    /**
+     * adapter for will-data items.
+     */
+    private lateinit var itemAdapter: WillItemUiAdapter<T>
+
+    fun setItemAdapter(adapter: WillItemUiAdapter<T>) {
+        itemAdapter = adapter
     }
 
     private val dimenProps = WillDimenProperties()
@@ -24,34 +53,51 @@ class WillView1 constructor(
     private val gradientProps = WillGradient()
     private var willRange = RectF()
     private var mPath = Path()
+    private var mRect = Rect()
+    private var mMatrix = Matrix()
 
-    private val wheelSize = 8 // TODO for testing
+    private var overlayDimenAdapter1: OffSetDimenAdapter1 = OverlayDimenAdapter1Impl()
+
+    fun setOverLayDimenAdapter1(adapter: OffSetDimenAdapter1) {
+        overlayDimenAdapter1 = adapter
+    }
+
+    private var textDimenAdapter1: OffSetDimenAdapter1 = TextDimenAdapter1Impl()
+
+    fun setTextDimenAdapter1(adapter: OffSetDimenAdapter1) {
+        textDimenAdapter1 = adapter
+    }
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
-        if (canvas == null) return
+        if (canvas == null || ::items.isInitialized.not() || ::itemAdapter.isInitialized.not()) return
 
         var tempAngle = 0f
         val sweepAngle: Float = 360f / wheelSize
         val rotateAngle = sweepAngle / 2 + 90
 
-        for (i in 0..7) {
-            // draw graphics
+        for (i in 0..items.size) {
             drawPieBackground(i, tempAngle, sweepAngle, canvas)
-            // drawImage(canvas, tempAngle, mWheelItems.get(i).bitmap, rotateAngle)
+
+            val bitmap = itemAdapter.getRewardBitmap(items[i])
+            if (bitmap != null) {
+                drawImage(canvas, tempAngle, itemAdapter.getRewardBitmap(items[i])!!, rotateAngle)
+            }
+
             drawOverlayText(
                 canvas,
                 tempAngle,
                 sweepAngle,
-                i.toString()
+                itemAdapter.getOverlayText(items[i])
             )
             drawText(
                 canvas,
                 tempAngle,
                 sweepAngle,
-                i.toString()
+                itemAdapter.getRewardText(items[i])
             )
             drawSeparationArc(willRange, tempAngle, sweepAngle, canvas)
+
             // prepare for next iteration
             tempAngle += sweepAngle
             paintProps.archPaint.reset()
@@ -64,6 +110,48 @@ class WillView1 constructor(
         canvas.drawArc(willRange, tempAngle, sweepAngle, true, paintProps.archPaint)
     }
 
+    private fun drawImage(canvas: Canvas, tempAngle: Float, bitmap: Bitmap, rotateAngle: Float) {
+        // get every arc img width and angle
+        val imgWidth: Int = getImageWidth()
+        val angle: Float = ((tempAngle + 360 / wheelSize / 2) * Math.PI / 180).toFloat()
+
+        val x: Int =
+            (dimenProps.center + 5 * (dimenProps.radius) / 9 * cos(angle.toDouble())).toInt()
+        val y: Int =
+            (dimenProps.center + 5 * (dimenProps.radius) / 9 * sin(angle.toDouble())).toInt()
+
+        // create arc to draw
+        // setting the value of Rect
+        mRect.set(x - imgWidth / 2, y - imgWidth / 2, x + imgWidth / 2, y + imgWidth / 2)
+
+        // rotate main bitmap
+        val px: Float = mRect.exactCenterX()
+        val py: Float = mRect.exactCenterY()
+        val ar = bitmap.width.toFloat() / bitmap.height
+
+        mMatrix.postTranslate(
+            (-bitmap.width shr 1).toFloat(),
+            (-bitmap.height shr 1).toFloat()
+        )
+        mMatrix.postScale(
+            imgWidth.toFloat() / bitmap.width,
+            imgWidth.toFloat() / ar / bitmap.height
+        )
+        mMatrix.postRotate(tempAngle + rotateAngle)
+        mMatrix.postTranslate(px, py)
+        canvas.drawBitmap(bitmap, mMatrix, paintProps.bitmapPaint)
+        mMatrix.reset()
+        mRect.setEmpty()
+    }
+
+    private fun getImageWidth(): Int {
+        val sweepAngle: Double = 360.0 / wheelSize
+        val angle = Math.toRadians((180 - sweepAngle) / 2)
+
+        return (3f * (dimenProps.radius) / 4 * cos(angle)).toInt()
+    }
+
+
     private fun drawOverlayText(
         canvas: Canvas,
         tempAngle: Float,
@@ -71,9 +159,22 @@ class WillView1 constructor(
         text: String
     ) {
         mPath.addArc(willRange, tempAngle, sweepAngle)
-        val textWidth: Float = paintProps.overlayTextPaint.measureText(text)
-        val hOffset: Int = (dimenProps.radius * Math.PI / wheelSize - textWidth / 2).toInt()
-        val vOffset: Int = dimenProps.radius / 4 - 5
+        val hOffset: Int = overlayDimenAdapter1.getHOffsetOverlayText(
+            tempAngle,
+            sweepAngle,
+            text,
+            wheelSize,
+            paintProps,
+            dimenProps
+        )
+        val vOffset: Int = overlayDimenAdapter1.getVOffsetOverLayText(
+            tempAngle,
+            sweepAngle,
+            text,
+            wheelSize,
+            paintProps,
+            dimenProps
+        )
         canvas.drawTextOnPath(
             text,
             mPath,
@@ -86,12 +187,27 @@ class WillView1 constructor(
 
     private fun drawText(canvas: Canvas, tempAngle: Float, sweepAngle: Float, text: String) {
         mPath.addArc(willRange, tempAngle, sweepAngle) //used global Path
-        val textWidth: Float = paintProps.textPaint.measureText(text)
-        val hOffset: Int = (dimenProps.radius * Math.PI / wheelSize - textWidth / 2).toInt()
-        // change this '5' number to change the radial distance of text from the center
-        // change this '5' number to change the radial distance of text from the center
-        val vOffset: Int = dimenProps.radius / 5 - 3
+
+        val hOffset: Int = overlayDimenAdapter1.getHOffsetOverlayText(
+            tempAngle,
+            sweepAngle,
+            text,
+            wheelSize,
+            paintProps,
+            dimenProps
+        )
+
+        val vOffset: Int = overlayDimenAdapter1.getVOffsetOverLayText(
+            tempAngle,
+            sweepAngle,
+            text,
+            wheelSize,
+            paintProps,
+            dimenProps
+        )
+
         paintProps.textPaint.color = ContextCompat.getColor(context, R.color.spinwill_text_color)
+
         canvas.drawTextOnPath(
             text,
             mPath,
@@ -99,6 +215,7 @@ class WillView1 constructor(
             vOffset.toFloat(),
             paintProps.textPaint
         )
+
         mPath.reset()
     }
 
@@ -115,9 +232,18 @@ class WillView1 constructor(
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         val width = min(measuredWidth, measuredHeight)
 
-        dimenProps.padding =
-            if (paddingLeft == 0) DEFAULT_PADDING else paddingLeft
-        dimenProps.radius = (width - (dimenProps.padding * 2)) / 2
+        dimenProps.let {
+            it.paddingLeft = paddingLeft
+            it.paddingBottom = paddingBottom
+            it.paddingTop = paddingTop
+            it.paddingRight = paddingRight
+        }
+
+        if ((paddingLeft == paddingRight) && (paddingTop == paddingRight) && (paddingBottom == paddingTop)) {
+            dimenProps.padding = paddingLeft
+        }
+
+        dimenProps.radius = (width - (dimenProps.paddingLeft + dimenProps.paddingRight * 2)) / 2
         dimenProps.center = width / 2
 
         setMeasuredDimension(

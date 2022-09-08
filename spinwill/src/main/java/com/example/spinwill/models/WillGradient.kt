@@ -1,4 +1,4 @@
-package com.example.spinwill.ui
+package com.example.spinwill.models
 
 import android.graphics.RadialGradient
 

@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.work.*
 import com.example.spinwill.adapter.WillItemAdapter
@@ -12,6 +13,8 @@ import com.example.spinwill.cron.SpinWillWorker
 import com.example.spinwill.cron.SpinWillWorkerFactory
 import com.example.spinwill.database.local.SpinWillLocalDbImpl
 import com.example.spinwill.di.SpinWillInjector
+import com.example.spinwill.ui.WillView1
+import com.example.spinwill.ui.adapters.WillItemUiAdapter
 import com.example.spinwill.usecases.SpinWillBitmapLoadUseCaseImpl
 import com.example.spinwill.utils.Resource
 import kotlinx.coroutines.*
@@ -33,6 +36,34 @@ class MainActivity : AppCompatActivity() {
         setupDependencies()
         // setupWork()
         setupUi()
+        setupWheelView()
+    }
+
+    private fun setupWheelView() {
+        val layout = findViewById<FrameLayout>(R.id.frame)
+        val willView = WillView1<SpinWillItem>(this, null)
+        layout.addView(willView)
+        scope.launch(Dispatchers.IO) {
+            val result = injector.getLocalDatabase().getAllWillItems()
+            if (result is Resource.Success && result.data != null) {
+                runOnUiThread {
+                    willView.setItems(result.data!!)
+                    willView.setItemAdapter(object : WillItemUiAdapter<SpinWillItem> {
+                        override fun getRewardText(item: SpinWillItem): String {
+                            return item.rewardText
+                        }
+
+                        override fun getOverlayText(item: SpinWillItem): String {
+                            return item.rewardText
+                        }
+
+                        override fun getRewardBitmap(item: SpinWillItem): Bitmap? {
+                            return item.rewardBitmap
+                        }
+                    })
+                }
+            }
+        }
     }
 
     private fun setupDependencies() {

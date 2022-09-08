@@ -1,4 +1,4 @@
-package com.example.spinwill.ui
+package com.example.spinwill.models
 
 data class WillDimenProperties(
     var paddingLeft: Int = 0,
