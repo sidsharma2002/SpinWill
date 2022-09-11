@@ -7,4 +7,11 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="coin_txt">#fbb42a</color>
+    <color name="spinwill_overalytext_color">#12770E00</color>
+    <color name="spinwill_arc_seperation_line">#FCDEA667</color>
+    <color name="spinwill_darkyellow_gradientLight">#FFC87E</color>
+    <color name="spinwill_darkyellow_gradientDark">#F4C21A</color>
+    <color name="spinwil_lightyellow_gradientDark">#FDE79E</color>
+    <color name="spinwill_text_color">#770E00</color>
 </resources>

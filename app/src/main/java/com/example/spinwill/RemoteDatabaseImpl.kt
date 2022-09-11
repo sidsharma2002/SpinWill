@@ -10,28 +10,20 @@ class RemoteDatabaseImpl : SpinWillRemoteDatabase<SpinWillItem> {
         Log.d("App", "23")
         val list = mutableListOf<SpinWillItem>()
 
-        list.add(
-            SpinWillItem(
-                rewardId = 1L,
-                rewardAmount = 100L,
-                rewardImage = "https://images.pexels.com/photos/2014422/pexels-photo-2014422.jpeg",
-                rewardText = "100 COINS"
+        /*
+            when number of items is odd it creates repetition in color of arcs
+         */
+        for (i in 0..5) {
+            list.add(
+                SpinWillItem(
+                    rewardId = 1L,
+                    rewardAmount = i * 100L,
+                    rewardImage = "https://images.pexels.com/photos/2014422/pexels-photo-2014422.jpeg",
+                    rewardText = "${i}00"
+                )
             )
-        )
-
-        delay(1000L)
-
-        list.add(
-            SpinWillItem(
-                rewardId = 1L,
-                rewardAmount = 100L,
-                rewardImage = "https://images.pexels.com/photos/2014422/pexels-photo-2014422.jpeg",
-                rewardText = "100 COINS"
-            )
-        )
-
+        }
         Log.d("App", "19")
-
         return Resource.Success(list)
     }
 }

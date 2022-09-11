@@ -2,16 +2,22 @@ package com.example.spinwill
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.core.content.ContextCompat
 import androidx.work.*
 import com.example.spinwill.adapter.WillItemAdapter
 import com.example.spinwill.cron.SpinWillWorker
 import com.example.spinwill.cron.SpinWillWorkerFactory
 import com.example.spinwill.database.local.SpinWillLocalDbImpl
 import com.example.spinwill.di.SpinWillInjector
+import com.example.spinwill.ui.SpinWillView1
+import com.example.spinwill.ui.WillView1
+import com.example.spinwill.ui.adapters.WillItemUiAdapter
 import com.example.spinwill.usecases.SpinWillBitmapLoadUseCaseImpl
 import com.example.spinwill.utils.Resource
 import kotlinx.coroutines.*
@@ -30,20 +36,55 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        AppWillRoomDatabase.getInstance(this.applicationContext)
         setupDependencies()
         // setupWork()
-        setupUi()
+        // setupUi()
+        setupWheelView()
+    }
+
+    private fun setupWheelView() {
+        val layout = findViewById<FrameLayout>(R.id.frame)
+        val willView = SpinWillView1<SpinWillItem>(this)
+        layout.addView(willView)
+        scope.launch(Dispatchers.IO) {
+            injector.getRepository().fetchAndUpdateWheelItem()
+            val result = injector.getRepository().loadBitmapAndSave()
+
+            if (result is Resource.Success && result.data != null) {
+                val list = result.data!!
+                Log.d("MainAct", "result size " + list.size)
+
+                runOnUiThread {
+                    willView.getWillView().paintProps.textPaint.apply {
+                        color = Color.WHITE
+                    }
+                    willView.setItems(result.data!!)
+                    willView.setItemAdapter(object : WillItemUiAdapter<SpinWillItem> {
+                        override fun getRewardText(item: SpinWillItem): String {
+                            return item.rewardText
+                        }
+
+                        override fun getOverlayText(item: SpinWillItem): String {
+                            return item.rewardText
+                        }
+
+                        override fun getRewardBitmap(item: SpinWillItem): Bitmap? {
+                            return item.rewardBitmap
+                        }
+                    })
+                }
+            }
+        }
     }
 
     private fun setupDependencies() {
         // set context, remoteDb, localDb, dao, bitmap load use-case.
         injector.init(this, RemoteDatabaseImpl())
 
-        val daoConc = SpinWillDaoConc()
-        daoConc.setDao(AppWillRoomDatabase.getInstance(this.applicationContext).getSpinWillDao())
+        val daoActions = SpinWillDaoConc()
+        daoActions.setDao(AppWillRoomDatabase.getInstance(this.applicationContext).getSpinWillDao())
         injector.setLocalDatabase(
-            SpinWillLocalDbImpl(daoConc)
+            SpinWillLocalDbImpl(daoActions)
         )
 
         injector.setBitmapLoadUseCase(
