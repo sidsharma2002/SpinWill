@@ -9,7 +9,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="coin_txt">#fbb42a</color>
     <color name="spinwill_overalytext_color">#12770E00</color>
-    <color name="spinwill_arc_seperation_line">#80E08720</color>
+    <color name="spinwill_arc_seperation_line">#FCDEA667</color>
     <color name="spinwill_darkyellow_gradientLight">#FFC87E</color>
     <color name="spinwill_darkyellow_gradientDark">#F4C21A</color>
     <color name="spinwil_lightyellow_gradientDark">#FDE79E</color>

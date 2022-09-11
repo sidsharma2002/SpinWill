@@ -40,7 +40,8 @@ class TextDimenAdapter1Impl : OffSetDimenAdapter1 {
         dimenProps: WillDimenProperties
     ): Int {
         val textWidth: Float = paintProps.overlayTextPaint.measureText(text)
-        return (dimenProps.radius * Math.PI / itemsSize - textWidth / 2).toInt()
+        val h = (2 * dimenProps.radius * Math.PI / itemsSize - textWidth / 2).toInt()
+        return h / 2
     }
 
     override fun getVOffsetOverLayText(

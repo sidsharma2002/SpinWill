@@ -7,6 +7,7 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.example.spinwill.R
+import com.example.spinwill.adapter.WillPaintAdapter
 import com.example.spinwill.models.WillDimenProperties
 import com.example.spinwill.models.WillGradient
 import com.example.spinwill.models.WillPaintProperties
@@ -15,6 +16,7 @@ import com.example.spinwill.ui.adapters.WillItemUiAdapter
 import com.example.spinwill.ui.defaultImpl.OverlayDimenAdapter1Impl
 import com.example.spinwill.ui.defaultImpl.TextDimenAdapter1Impl
 import com.example.spinwill.utils.dp
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -26,6 +28,10 @@ class WillView1<T> constructor(
     context: Context,
     attributeSet: AttributeSet?
 ) : View(context, attributeSet) {
+
+    companion object {
+        const val DEF_BORDER_PERCENT = 3f
+    }
 
     private var wheelSize: Int = 0
 
@@ -49,8 +55,8 @@ class WillView1<T> constructor(
     }
 
     private val dimenProps = WillDimenProperties()
-    private val paintProps = WillPaintProperties()
-    private val gradientProps = WillGradient()
+    val paintProps = WillPaintProperties()
+    val gradientProps = WillGradient()
     private var willRange = RectF()
     private var mPath = Path()
     private var mRect = Rect()
@@ -76,7 +82,8 @@ class WillView1<T> constructor(
         val sweepAngle: Float = 360f / wheelSize
         val rotateAngle = sweepAngle / 2 + 90
 
-        for (i in 0..items.size) {
+        for (i in items.indices) {
+            // drawPieBackgroundBorder(canvas)
             drawPieBackground(i, tempAngle, sweepAngle, canvas)
 
             val bitmap = itemAdapter.getRewardBitmap(items[i])
@@ -97,7 +104,6 @@ class WillView1<T> constructor(
                 itemAdapter.getRewardText(items[i])
             )
             drawSeparationArc(willRange, tempAngle, sweepAngle, canvas)
-
             // prepare for next iteration
             tempAngle += sweepAngle
             paintProps.archPaint.reset()
@@ -121,7 +127,6 @@ class WillView1<T> constructor(
             (dimenProps.center + 5 * (dimenProps.radius) / 9 * sin(angle.toDouble())).toInt()
 
         // create arc to draw
-        // setting the value of Rect
         mRect.set(x - imgWidth / 2, y - imgWidth / 2, x + imgWidth / 2, y + imgWidth / 2)
 
         // rotate main bitmap
@@ -148,7 +153,7 @@ class WillView1<T> constructor(
         val sweepAngle: Double = 360.0 / wheelSize
         val angle = Math.toRadians((180 - sweepAngle) / 2)
 
-        return (3f * (dimenProps.radius) / 4 * cos(angle)).toInt()
+        return (2f * (dimenProps.radius) / 4 * cos(angle)).toInt()
     }
 
 
@@ -188,7 +193,7 @@ class WillView1<T> constructor(
     private fun drawText(canvas: Canvas, tempAngle: Float, sweepAngle: Float, text: String) {
         mPath.addArc(willRange, tempAngle, sweepAngle) //used global Path
 
-        val hOffset: Int = overlayDimenAdapter1.getHOffsetOverlayText(
+        val hOffset: Int = textDimenAdapter1.getHOffsetOverlayText(
             tempAngle,
             sweepAngle,
             text,
@@ -197,7 +202,7 @@ class WillView1<T> constructor(
             dimenProps
         )
 
-        val vOffset: Int = overlayDimenAdapter1.getVOffsetOverLayText(
+        val vOffset: Int = textDimenAdapter1.getVOffsetOverLayText(
             tempAngle,
             sweepAngle,
             text,
@@ -232,18 +237,17 @@ class WillView1<T> constructor(
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         val width = min(measuredWidth, measuredHeight)
 
+        val padding = (width * DEF_BORDER_PERCENT / 100).toInt()
+
         dimenProps.let {
-            it.paddingLeft = paddingLeft
-            it.paddingBottom = paddingBottom
-            it.paddingTop = paddingTop
-            it.paddingRight = paddingRight
+            it.paddingLeft = padding // paddingLeft
+            it.paddingBottom = padding // paddingBottom
+            it.paddingTop = padding // paddingTop
+            it.paddingRight = padding // paddingRight
+            it.padding = padding
         }
 
-        if ((paddingLeft == paddingRight) && (paddingTop == paddingRight) && (paddingBottom == paddingTop)) {
-            dimenProps.padding = paddingLeft
-        }
-
-        dimenProps.radius = (width - (dimenProps.paddingLeft + dimenProps.paddingRight * 2)) / 2
+        dimenProps.radius = (width - (dimenProps.paddingLeft + dimenProps.paddingRight)) / 2
         dimenProps.center = width / 2
 
         setMeasuredDimension(
@@ -255,49 +259,53 @@ class WillView1<T> constructor(
     }
 
     private fun initComponents() {
-        paintProps.archPaint.apply {
-            isAntiAlias = true
-            isDither = true
-            color = ContextCompat.getColor(context, R.color.coin_txt)
-            strokeWidth = 0.01f
-            style = Paint.Style.FILL_AND_STROKE
+        if (paintProps.archPaintAdapter != null) {
+            paintProps.archPaintAdapter!!.setPaintProperties(paintProps.archPaint)
+        } else {
+            paintProps.archPaint.apply {
+                color = ContextCompat.getColor(context, R.color.coin_txt)
+                strokeWidth = 0.01f
+            }
         }
 
-        paintProps.textPaint.apply {
-            isAntiAlias = true
-            isDither = true
-            typeface = ResourcesCompat.getFont(
-                context,
-                R.font.montserrat_extrabolditalic
-            )
-            textSize = 20.dp()
-            letterSpacing = 0.1f
+        if (paintProps.textPaintAdapter != null) {
+            paintProps.textPaintAdapter!!.setPaintProperties(paintProps.textPaint)
+        } else {
+            paintProps.textPaint.apply {
+                typeface = ResourcesCompat.getFont(
+                    context,
+                    R.font.montserrat_extrabolditalic
+                )
+                textSize = (dimenProps.radius * 1.5 / 9).toFloat()
+            }
         }
 
-        paintProps.overlayTextPaint.apply {
-            color = ContextCompat.getColor(
-                context,
-                R.color.spinwill_overalytext_color
-            )
-            isAntiAlias = true
-            isDither = true
-            typeface = ResourcesCompat.getFont(
-                context,
-                R.font.montserrat_extrabolditalic
-            )
-            textSize = 45.dp()
-            letterSpacing = 0.1f
+        if (paintProps.overlayTextPaintAdapter != null) {
+            paintProps.overlayTextPaintAdapter!!.setPaintProperties(paintProps.overlayTextPaint)
+        } else {
+            paintProps.overlayTextPaint.apply {
+                color = ContextCompat.getColor(
+                    context,
+                    R.color.spinwill_overalytext_color
+                )
+                typeface = ResourcesCompat.getFont(
+                    context,
+                    R.font.montserrat_extrabolditalic
+                )
+                textSize = (dimenProps.radius * 3 / 9).toFloat()
+            }
         }
 
-        paintProps.separationArchPaint.apply {
-            style = Paint.Style.STROKE
-            color = ContextCompat.getColor(
-                context,
-                R.color.spinwill_arc_seperation_line
-            )
-            isAntiAlias = true
-            isDither = true
-            strokeWidth = 3f
+        if (paintProps.separationArchPaintAdapter != null) {
+            paintProps.separationArchPaintAdapter!!.setPaintProperties(paintProps.separationArchPaint)
+        } else {
+            paintProps.separationArchPaint.apply {
+                color = ContextCompat.getColor(
+                    context,
+                    R.color.spinwill_arc_seperation_line
+                )
+                strokeWidth = dimenProps.radius / 55f
+            }
         }
 
         val padding = dimenProps.padding.toFloat()

@@ -4,6 +4,8 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.20742753623188406" />
+        <entry key="spinwill/src/main/res/drawable/bg_spinwill.xml" value="0.1335" />
+        <entry key="spinwill/src/main/res/layout/layout_spinwillview1.xml" value="0.20742753623188406" />
       </map>
     </option>
   </component>

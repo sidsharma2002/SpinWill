@@ -2,17 +2,20 @@ package com.example.spinwill
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.core.content.ContextCompat
 import androidx.work.*
 import com.example.spinwill.adapter.WillItemAdapter
 import com.example.spinwill.cron.SpinWillWorker
 import com.example.spinwill.cron.SpinWillWorkerFactory
 import com.example.spinwill.database.local.SpinWillLocalDbImpl
 import com.example.spinwill.di.SpinWillInjector
+import com.example.spinwill.ui.SpinWillView1
 import com.example.spinwill.ui.WillView1
 import com.example.spinwill.ui.adapters.WillItemUiAdapter
 import com.example.spinwill.usecases.SpinWillBitmapLoadUseCaseImpl
@@ -35,18 +38,26 @@ class MainActivity : AppCompatActivity() {
 
         setupDependencies()
         // setupWork()
-        setupUi()
+        // setupUi()
         setupWheelView()
     }
 
     private fun setupWheelView() {
         val layout = findViewById<FrameLayout>(R.id.frame)
-        val willView = WillView1<SpinWillItem>(this, null)
+        val willView = SpinWillView1<SpinWillItem>(this)
         layout.addView(willView)
         scope.launch(Dispatchers.IO) {
-            val result = injector.getLocalDatabase().getAllWillItems()
+            injector.getRepository().fetchAndUpdateWheelItem()
+            val result = injector.getRepository().loadBitmapAndSave()
+
             if (result is Resource.Success && result.data != null) {
+                val list = result.data!!
+                Log.d("MainAct", "result size " + list.size)
+
                 runOnUiThread {
+                    willView.getWillView().paintProps.textPaint.apply {
+                        color = Color.WHITE
+                    }
                     willView.setItems(result.data!!)
                     willView.setItemAdapter(object : WillItemUiAdapter<SpinWillItem> {
                         override fun getRewardText(item: SpinWillItem): String {
