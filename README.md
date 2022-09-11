@@ -2,26 +2,24 @@
 
 A modern and highly customisable library to implement spinwheel feature in your android app which comes packed with inbuilt local database support that allows you to periodically _fetch and cache_ the reward items 🎁.
 
-### How to use: 
+### How to use fetch And Catch Mechanism: 
 
 create and save this injector instance (recommended to be application scoped)
 
 `private val injector by lazy {
-        SpinWillInjector<SpinWillItem>()
+        SpinWillInjector<SpinWillItem>()  // We are assuming SpinWillItem is the reward item model class.
     }`
 
 provide the following dependencies to the injector : 
   1. Application context
   2. SpinWillRemoteDatabase
-  3. SpinWillLocalDatabase (requires SpinWillDbActions incase you are using default local db immpl)
+  3. SpinWillLocalDatabase (requires SpinWillDbActions incase you are using default local db impl)
   4. SpinWillBitmapLoadUseCase
   
 example : 
 
-NOTE : We are assuming SpinWillItem is the reward item model class.
-
 ```
-injector.init(this, RemoteDatabaseImpl())
+injector.init(this, RemoteDatabaseImpl()) // impl of SpinWheelRemoteDatabase
 
 // provide localDatabase
 injector.setLocalDatabase(
@@ -48,6 +46,41 @@ injector.setBitmapLoadUseCase(
     }
 ```
 
+### Show Wheel UI: 
 
+``` 
+// add SpinWillView1
+val willView = SpinWillView1<SpinWillItem>(this)
+someLayout.addView(willView)
+
+// run on background thread
+injector.getRepository().fetchAndUpdateWheelItem()
+val result = injector.getRepository().loadBitmapAndSave()
+
+if (result is Resource.Success && result.data != null) {
+        runOnUiThread {
+                    // set data items
+                    willView.setItems(result.data!!)
+
+                    // provide adapter for the items
+                    willView.setItemAdapter(object : WillItemUiAdapter<SpinWillItem> {
+                        override fun getRewardText(item: SpinWillItem): String {
+                            return item.rewardText
+                        }
+
+                        override fun getOverlayText(item: SpinWillItem): String {
+                            return item.rewardText
+                        }
+
+                        override fun getRewardBitmap(item: SpinWillItem): Bitmap? {
+                            return item.rewardBitmap
+                        }
+                    })
+
+                    // invalidate the view
+                    willView.invalidate()
+                }
+}
+```
 
 
