@@ -1,9 +1,14 @@
-# SpinWill
+# SpinWill [in alpha]
 
 A modern and highly customisable library to implement spinwheel feature in your android app which comes packed with inbuilt local database support that allows you to periodically _fetch and cache_ the reward items 🎁.
 
 ![WhatsApp Image 2022-09-11 at 12 36 04](https://user-images.githubusercontent.com/53833109/189518316-f446ea0e-18d7-453c-811e-4b1c8300a2e2.jpeg)
 
+```
+ // on jitpack.io
+ implementation 'com.github.sidsharma2002:SpinWill:[latest_version]'
+
+```
 
 ### How to use fetch And Catch Mechanism: 
 
