@@ -49,6 +49,26 @@ injector.setBitmapLoadUseCase(
     }
 ```
 
+### Trigger Periodic Work:
+```
+// customise according to your usecase
+val workReq = PeriodicWorkRequest = PeriodicWorkRequest.Builder(
+            SpinWillWorker::class.java, x, TimeUnit.MINUTES
+        )
+
+Configuration.Builder()
+            .setMinimumLoggingLevel(Log.DEBUG)
+            .setWorkerFactory(SpinWillWorkerFactory(injector.getRepository()))
+            .build()        
+
+WorkManager.getInstance(this)
+            .enqueueUniquePeriodicWork(
+                "spinwill_item_update",
+                ExistingPeriodicWorkPolicy.REPLACE,
+                workReq
+            )        
+```
+
 ### Show Wheel UI: 
 
 ``` 
